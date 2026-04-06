@@ -1,0 +1,163 @@
+/* --- RESET E CONFIGURAÇÕES GERAIS --- */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: #e0e0e0;
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden; /* Mantém a aplicação fixa na tela */
+}
+
+/* --- DIVISÃO DA TELA --- */
+.calculator-section {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #d1d1d1;
+    border-right: 2px solid #b0b0b0;
+    padding: 20px;
+}
+
+.notebook-section {
+    flex: 1;
+    background-color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+/* --- ESTILO DA CALCULADORA --- */
+.calculator {
+    background-color: #333;
+    border-radius: 25px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+    width: 100%;
+    max-width: 350px;
+    padding: 25px;
+}
+
+.calc-display {
+    background-color: #1a1a1a;
+    color: #48bb78; /* Verde "Matrix/Digital" */
+    font-family: 'Courier New', monospace;
+    font-size: 2.2rem;
+    text-align: right;
+    padding: 20px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+    overflow-x: auto;
+    min-height: 85px;
+    box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+    border: 1px solid #444;
+}
+
+/* --- GRADE DE BOTÕES --- */
+.calc-buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+
+button {
+    border: none;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    padding: 18px 10px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    color: white;
+    font-weight: bold;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+}
+
+button:active {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 rgba(0,0,0,0.2);
+}
+
+/* Estilos de cores por tipo de botão */
+.btn-num { background-color: #4a5568; } /* Cinza médio */
+.btn-num:hover { background-color: #5a67d8; } /* Azul ao passar o mouse */
+
+.btn-op { background-color: #f6993f; } /* Laranja */
+.btn-op:hover { background-color: #faad63; }
+
+.btn-sci { background-color: #2d3748; color: #a0aec0; } /* Científicos escuros */
+.btn-sci:hover { background-color: #4a5568; color: white; }
+
+.btn-clear { background-color: #e53e3e; } /* Vermelho */
+.btn-clear:hover { background-color: #fc8181; }
+
+.btn-eq {
+    grid-column: span 4;
+    background-color: #38a169; /* Verde */
+    margin-top: 10px;
+    font-size: 1.3rem;
+}
+.btn-eq:hover { background-color: #48bb78; }
+
+/* --- ESTILO DO CADERNO --- */
+.notebook {
+    width: 100%;
+    height: 100%;
+    max-width: 600px;
+    max-height: 850px;
+    background-color: #fdfdfd;
+    border: 1px solid #ddd;
+    box-shadow: 10px 10px 30px rgba(0,0,0,0.1);
+    position: relative;
+    border-radius: 8px;
+}
+
+/* Papel Quadriculado com CSS puro */
+.notebook-paper {
+    width: 100%;
+    height: 100%;
+    background-image:
+        linear-gradient(#e5e5e5 1px, transparent 1px),
+        linear-gradient(90deg, #e5e5e5 1px, transparent 1px);
+    background-size: 25px 25px; /* Tamanho de cada quadradinho */
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+
+#notebook-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2; /* Fica acima do quadriculado */
+}
+
+/* --- RESPONSIVIDADE (MOBILE) --- */
+@media (max-width: 768px) {
+    body {
+        flex-direction: column;
+        overflow-y: auto;
+    }
+
+    .calculator-section, .notebook-section {
+        flex: none;
+        width: 100%;
+        height: auto;
+        padding: 40px 20px;
+    }
+
+    .calculator-section {
+        border-right: none;
+        border-bottom: 3px solid #b0b0b0;
+    }
+
+    .notebook {
+        height: 500px;
+    }
+}

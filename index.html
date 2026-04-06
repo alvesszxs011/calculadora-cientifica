@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora Científica com Caderno</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #e0e0e0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- Metade Esquerda: Calculadora --- */
+        .calculator-section {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #d1d1d1;
+            border-right: 2px solid #b0b0b0;
+            padding: 20px;
+        }
+
+        .calculator {
+            background-color: #333;
+            border-radius: 20px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 340px;
+            padding: 20px;
+        }
+
+        .calc-display {
+            background-color: #222;
+            color: #48bb78; /* Cor digital verde */
+            font-family: 'Courier New', monospace;
+            font-size: 2.2rem;
+            text-align: right;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            min-height: 70px;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+        }
+
+        .calc-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        button {
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: white;
+            font-weight: bold;
+        }
+
+        button:active { transform: scale(0.95); }
+
+        .btn-num { background-color: #555; }
+        .btn-num:hover { background-color: #666; }
+
+        .btn-op { background-color: #f39c12; }
+        .btn-op:hover { background-color: #e67e22; }
+
+        /* Botões Científicos */
+        .btn-sci { background-color: #2d3748; color: #a0aec0; }
+        .btn-sci:hover { background-color: #4a5568; color: white; }
+
+        .btn-eq {
+            grid-column: span 2;
+            background-color: #27ae60;
+        }
+
+        .btn-clear { background-color: #c0392b; }
+
+        /* --- Metade Direita: Caderno --- */
+        .notebook-section {
+            flex: 1;
+            background-color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .notebook {
+            width: 100%;
+            height: 100%;
+            max-width: 600px;
+            max-height: 800px;
+            background-color: #fdfdfd;
+            border: 1px solid #ccc;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+            border-radius: 5px;
+        }
+
+        .notebook-paper {
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(#e5e5e5 1px, transparent 1px),
+                linear-gradient(90deg, #e5e5e5 1px, transparent 1px);
+            background-size: 25px 25px;
+            position: absolute;
+            top: 0; left: 0; z-index: 1;
+        }
+
+        #notebook-canvas {
+            position: absolute;
+            top: 0; left: 0; z-index: 2;
+        }
+
+        @media (max-width: 768px) {
+            body { flex-direction: column; overflow: auto; }
+            .calculator-section, .notebook-section { flex: none; width: 100%; }
+            .notebook { height: 400px; }
+        }
+    </style>
+</head>
+<body>
+
+    <section class="calculator-section">
+        <div class="calculator">
+            <div id="display" class="calc-display">0</div>
+            <div class="calc-buttons">
+                <button class="btn-sci" onclick="execSci('sin')">sin</button>
+                <button class="btn-sci" onclick="execSci('cos')">cos</button>
+                <button class="btn-sci" onclick="setOp('^')">xʸ</button>
+                <button class="btn-sci" onclick="setOp('sqrt')">√</button>
+
+                <button class="btn-clear" onclick="clearDisplay()">AC</button>
+                <button class="btn-op" onclick="setOp('/')">÷</button>
+                <button class="btn-op" onclick="setOp('*')">×</button>
+                <button class="btn-op" onclick="setOp('-')">-</button>
+
+                <button class="btn-num" onclick="addNum('7')">7</button>
+                <button class="btn-num" onclick="addNum('8')">8</button>
+                <button class="btn-num" onclick="addNum('9')">9</button>
+                <button class="btn-op" onclick="setOp('+')">+</button>
+
+                <button class="btn-num" onclick="addNum('4')">4</button>
+                <button class="btn-num" onclick="addNum('5')">5</button>
+                <button class="btn-num" onclick="addNum('6')">6</button>
+                <button class="btn-num" onclick="addNum('.')">.</button>
+
+                <button class="btn-num" onclick="addNum('1')">1</button>
+                <button class="btn-num" onclick="addNum('2')">2</button>
+                <button class="btn-num" onclick="addNum('3')">3</button>
+                <button class="btn-num" onclick="addNum('0')">0</button>
+
+                <button class="btn-eq" style="grid-column: span 4;" onclick="calculate()">= CALCULAR NO CADERNO</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="notebook-section">
+        <div class="notebook">
+            <div class="notebook-paper"></div>
+            <canvas id="notebook-canvas"></canvas>
+        </div>
+    </section>
+
+    <script>
+        let currentInput = "";
+        let previousInput = "";
+        let operator = null;
+
+        const display = document.getElementById('display');
+        const canvas = document.getElementById('notebook-canvas');
+        const ctx = canvas.getContext('2d');
+        const gridSize = 25;
+
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.offsetWidth;
+            canvas.height = canvas.parentElement.offsetHeight;
+        }
+        window.addEventListener('load', resizeCanvas);
+        window.addEventListener('resize', resizeCanvas);
+
+        function updateDisplay() {
+            display.innerText = currentInput || previousInput || "0";
+        }
+
+        function addNum(num) {
+            if (num === '.' && currentInput.includes('.')) return;
+            currentInput += num;
+            updateDisplay();
+        }
+
+        function clearDisplay() {
+            currentInput = "";
+            previousInput = "";
+            operator = null;
+            updateDisplay();
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function setOp(op) {
+            if (currentInput === "" && op !== 'sqrt') return;
+            
+            if (op === 'sqrt') {
+                let val = parseFloat(currentInput);
+                let res = Math.sqrt(val);
+                drawSciAccount(`√(${val})`, res.toFixed(4));
+                currentInput = res.toString();
+                updateDisplay();
+                return;
+            }
+
+            operator = op;
+            previousInput = currentInput;
+            currentInput = "";
+        }
+
+        function execSci(func) {
+            if (currentInput === "") return;
+            let val = parseFloat(currentInput);
+            let res = 0;
+            let label = "";
+
+            if (func === 'sin') {
+                res = Math.sin(val * Math.PI / 180);
+                label = `sin(${val}°)`;
+            } else if (func === 'cos') {
+                res = Math.cos(val * Math.PI / 180);
+                label = `cos(${val}°)`;
+            }
+
+            drawSciAccount(label, res.toFixed(4));
+            currentInput = res.toString();
+            updateDisplay();
+        }
+
+        function calculate() {
+            if (previousInput === "" || currentInput === "") return;
+            let n1 = parseFloat(previousInput);
+            let n2 = parseFloat(currentInput);
+            let res = 0;
+
+            switch (operator) {
+                case '+': res = n1 + n2; drawArmada(n1, n2, res, "+"); break;
+                case '-': res = n1 - n2; drawArmada(n1, n2, res, "-"); break;
+                case '*': res = n1 * n2; drawArmada(n1, n2, res, "×"); break;
+                case '/': res = n1 / n2; drawArmada(n1, n2, res, "÷"); break;
+                case '^': res = Math.pow(n1, n2); drawSciAccount(`${n1}^${n2}`, res); break;
+            }
+
+            currentInput = res.toString();
+            previousInput = "";
+            operator = null;
+            updateDisplay();
+        }
+
+        // --- FUNÇÕES DE DESENHO ---
+
+        function drawText(txt, x, y, size = '26px', color = '#1a1a1a') {
+            ctx.font = `${size} 'Comic Sans MS', cursive`;
+            ctx.fillStyle = color;
+            ctx.fillText(txt, x, y);
+        }
+
+        function drawArmada(n1, n2, res, sym) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            let x = 100, y = 100;
+            
+            drawText("Conta Armada:", x, y - 40, '18px', '#888');
+            drawText(n1.toString(), x + 40, y);
+            drawText(sym + " " + n2.toString(), x, y + 40);
+            
+            ctx.beginPath();
+            ctx.moveTo(x, y + 55);
+            ctx.lineTo(x + 150, y + 55);
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = "#000";
+            ctx.stroke();
+
+            drawText(res.toString(), x + 40, y + 90, '30px', '#27ae60');
+        }
+
+        function drawSciAccount(label, res) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawText("Cálculo Científico:", 50, 60, '18px', '#888');
+            drawText(label + " =", 50, 120, '28px');
+            drawText(res.toString(), 70, 180, '35px', '#2980b9');
+        }
+    </script>
+</body>
+</html>
