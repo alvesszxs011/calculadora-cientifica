@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora Arco-Íris Didática</title>
+    <title>Calculadora Didática - Estilo Caderno</title>
     <style>
-        /* --- Estilos Globais e Layout --- */
+        /* --- ESTILOS GERAIS --- */
         * {
             margin: 0;
             padding: 0;
@@ -27,18 +27,29 @@
             100% { background-position: right; }
         }
 
-        /* --- Metade Esquerda: Calculadora --- */
+        /* --- DIVISÃO DA TELA --- */
         .calculator-section {
             flex: 1;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 20px;
             background: rgba(0, 0, 0, 0.2);
             backdrop-filter: blur(5px);
             border-right: 2px solid rgba(255,255,255,0.1);
+            padding: 20px;
         }
 
+        .notebook-section {
+            flex: 1;
+            background-color: #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* --- CALCULADORA --- */
         .calculator {
             background: rgba(0, 0, 0, 0.85);
             padding: 25px;
@@ -60,6 +71,7 @@
             color: #00ff88;
             font-family: 'Courier New', monospace;
             border: 1px solid #333;
+            overflow-x: auto;
         }
 
         .history-list {
@@ -98,19 +110,8 @@
 
         .equal { background: linear-gradient(45deg, #00ff88, #00c853); }
         .clear { background: linear-gradient(45deg, #ff1744, #d50000); }
-        .mode { background: linear-gradient(45deg, #ff9800, #ff5722); }
 
-        /* --- Metade Direita: Caderno --- */
-        .notebook-section {
-            flex: 1;
-            background-color: #e0e0e0;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
+        /* --- CADERNO --- */
         .notebook {
             width: 100%;
             height: 70%;
@@ -120,6 +121,7 @@
             box-shadow: 10px 10px 25px rgba(0,0,0,0.2);
             position: relative;
             border-radius: 5px;
+            overflow: hidden;
         }
 
         .notebook-paper {
@@ -128,15 +130,17 @@
             background-image:
                 linear-gradient(#e5e5e5 1px, transparent 1px),
                 linear-gradient(90deg, #e5e5e5 1px, transparent 1px);
-            background-size: 25px 25px;
+            background-size: 25px 25px; /* Tamanho do Grid */
             position: absolute;
             top: 0; left: 0;
+            z-index: 1;
         }
 
         canvas {
             position: absolute;
             top: 0; left: 0;
             z-index: 5;
+            pointer-events: none;
         }
 
         .explanation-box {
@@ -172,17 +176,11 @@
                 <button onclick="append(')')">)</button>
                 <button onclick="append('/')">÷</button>
 
-                <button onclick="applyFunc('sin')">sin</button>
-                <button onclick="applyFunc('cos')">cos</button>
-                <button onclick="applyFunc('tan')">tan</button>
-                <button onclick="applyFunc('log')">log</button>
-                <button onclick="applyFunc('ln')">ln</button>
-
                 <button onclick="append('7')">7</button>
                 <button onclick="append('8')">8</button>
                 <button onclick="append('9')">9</button>
                 <button onclick="append('*')">×</button>
-                <button onclick="applyFunc('sqrt')">√</button>
+                <button onclick="append('**0.5')">√</button>
 
                 <button onclick="append('4')">4</button>
                 <button onclick="append('5')">5</button>
@@ -196,8 +194,7 @@
                 <button onclick="append('+')">+</button>
                 <button onclick="calculate()" class="equal">=</button>
 
-                <button onclick="append('0')" style="grid-column: span 4;">0</button>
-                <button class="mode" onclick="toggleMode()" id="modeBtn">RAD</button>
+                <button onclick="append('0')" style="grid-column: span 5;">0</button>
             </div>
         </div>
     </section>
@@ -208,18 +205,18 @@
             <canvas id="notebook-canvas"></canvas>
         </div>
         <div class="explanation-box" id="explanation">
-            Professor: Aguardando sua conta para ensinar o passo a passo...
+            Professor: Aguardando sua conta para ensinar o passo a passo no grid...
         </div>
     </section>
 
     <script>
-        let display = document.getElementById("display");
-        let historyDiv = document.getElementById("history");
-        let explanation = document.getElementById("explanation");
-        let isDegree = false;
-        
         const canvas = document.getElementById('notebook-canvas');
         const ctx = canvas.getContext('2d');
+        const display = document.getElementById('display');
+        const explanation = document.getElementById('explanation');
+        const historyDiv = document.getElementById('history');
+
+        const GRID = 25;
 
         function resizeCanvas() {
             canvas.width = canvas.parentElement.offsetWidth;
@@ -227,6 +224,99 @@
         }
         window.addEventListener('load', resizeCanvas);
         window.addEventListener('resize', resizeCanvas);
+
+        function escreverNoGrid(texto, col, lin, cor = "#1a1a1a", tamanho = "20px") {
+            ctx.font = `bold ${tamanho} 'Courier New', monospace`;
+            ctx.fillStyle = cor;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+
+            let str = texto.toString();
+            for (let i = 0; i < str.length; i++) {
+                let x = (col + i) * GRID + (GRID / 2);
+                let y = lin * GRID + (GRID / 2);
+                if (str[i] !== " ") {
+                    ctx.fillText(str[i], x, y);
+                }
+            }
+        }
+
+        function desenharMultiplicacao(n1, n2, res) {
+            let s1 = n1.toString();
+            let s2 = n2.toString();
+            let tam = Math.max(s1.length, s2.length) + 1;
+            let c = 5, l = 3;
+
+            escreverNoGrid(s1.padStart(tam, ' '), c, l);
+            escreverNoGrid(s2.padStart(tam, ' '), c, l + 1);
+            escreverNoGrid("×", c, l + 1);
+
+            ctx.beginPath();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = "#000";
+            ctx.moveTo(c * GRID, (l + 2) * GRID);
+            ctx.lineTo((c + tam + 1) * GRID, (l + 2) * GRID);
+            ctx.stroke();
+
+            if (n2 > 9) {
+                let p1 = (n1 * (n2 % 10)).toString();
+                let p2 = (n1 * Math.floor(n2 / 10)).toString();
+                
+                escreverNoGrid(p1.padStart(tam, ' '), c, l + 2, "#666");
+                escreverNoGrid(p2.padStart(tam - 1, ' '), c, l + 3, "#666"); 
+                escreverNoGrid("+", c, l + 3);
+
+                ctx.beginPath();
+                ctx.moveTo(c * GRID, (l + 4) * GRID);
+                ctx.lineTo((c + tam + 1) * GRID, (l + 4) * GRID);
+                ctx.stroke();
+
+                escreverNoGrid(res.toString().padStart(tam, ' '), c, l + 4, "#27ae60", "22px");
+            } else {
+                escreverNoGrid(res.toString().padStart(tam, ' '), c, l + 2, "#27ae60", "22px");
+            }
+        }
+
+        function desenharDivisao(n1, n2) {
+            let q = Math.floor(n1 / n2).toString();
+            let r = (n1 % n2).toString();
+            let s1 = n1.toString();
+            let c = 4, l = 4;
+
+            escreverNoGrid(s1, c, l);
+
+            ctx.beginPath();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = "#000";
+            let chaveX = (c + s1.length) * GRID + 5;
+            ctx.moveTo(chaveX, (l - 0.5) * GRID);
+            ctx.lineTo(chaveX, (l + 1) * GRID); 
+            ctx.lineTo(chaveX + (4 * GRID), (l + 1) * GRID); 
+            ctx.stroke();
+
+            escreverNoGrid(n2.toString(), c + s1.length + 1, l);
+            escreverNoGrid(q, c + s1.length + 1, l + 1, "#27ae60");
+
+            let sub = (Math.floor(n1 / n2) * n2).toString();
+            escreverNoGrid("-" + sub, c - 1, l + 1, "#e53e3e");
+            
+            ctx.beginPath();
+            ctx.moveTo((c - 1) * GRID, (l + 2) * GRID);
+            ctx.lineTo(chaveX, (l + 2) * GRID);
+            ctx.stroke();
+
+            escreverNoGrid(r, c + s1.length - r.length, l + 2, "#27ae60");
+        }
+
+        function desenharFracao(exp) {
+            let [num, den] = exp.split('/');
+            let c = 8, l = 6;
+            escreverNoGrid(num, c, l);
+            ctx.fillStyle = "#000";
+            ctx.fillRect(c * GRID + 5, (l + 1) * GRID - 2, GRID * num.length + 10, 2);
+            escreverNoGrid(den, c, l + 1);
+            explanation.innerText = "Professor: Representei como uma fração!";
+        }
 
         function append(val) {
             if (display.innerText === "0") display.innerText = "";
@@ -236,139 +326,54 @@
         function clearDisplay() {
             display.innerText = "0";
             historyDiv.innerHTML = "";
-            explanation.innerText = "Professor: Limpei tudo! Vamos começar de novo?";
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            explanation.innerText = "Professor: Caderno limpo!";
         }
 
         function backspace() {
             display.innerText = display.innerText.slice(0, -1) || "0";
         }
 
-        function toggleMode() {
-            isDegree = !isDegree;
-            document.getElementById("modeBtn").innerText = isDegree ? "DEG" : "RAD";
-        }
-
-        function applyFunc(type) {
-            try {
-                let val = eval(display.innerText);
-                let result;
-                let rad = isDegree ? val * Math.PI / 180 : val;
-
-                switch(type) {
-                    case 'sin': result = Math.sin(rad); break;
-                    case 'cos': result = Math.cos(rad); break;
-                    case 'tan': result = Math.tan(rad); break;
-                    case 'log': result = Math.log10(val); break;
-                    case 'ln': result = Math.log(val); break;
-                    case 'sqrt': result = Math.sqrt(val); break;
-                }
-                
-                let label = `${type}(${val})`;
-                historyDiv.innerHTML += `<div>${label} = ${result.toFixed(4)}</div>`;
-                display.innerText = result;
-                drawSciNote(label, result.toFixed(4));
-            } catch {
-                display.innerText = "Erro";
-            }
-        }
-
         function calculate() {
             try {
                 let exp = display.innerText;
-                let result = eval(exp);
-                historyDiv.innerHTML += `<div>${exp} = ${result}</div>`;
+                let cleanExp = exp.replace('×', '*').replace('÷', '/');
+                let res = eval(cleanExp);
+                let resultadoFormatado = Number.isInteger(res) ? res : res.toFixed(2);
 
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
+                historyDiv.innerHTML += `<div>${exp} = ${resultadoFormatado}</div>`;
 
-                // Lógica de Professor
-                if (exp.includes('+')) {
-                    let parts = exp.split('+');
-                    drawStepAddition(parseFloat(parts[0]), parseFloat(parts[1]), result);
-                } else if (exp.includes('-')) {
-                    let parts = exp.split('-');
-                    drawStepSubtraction(parseFloat(parts[0]), parseFloat(parts[1]), result);
-                } else if (exp.includes('*')) {
-                    let parts = exp.split('*');
-                    drawStepMultiplication(parseFloat(parts[0]), parseFloat(parts[1]), result);
-                } else {
-                    drawSciNote(exp, result);
+                if (exp.includes('*')) {
+                    let parts = cleanExp.split('*');
+                    desenharMultiplicacao(Number(parts[0]), Number(parts[1]), resultadoFormatado);
+                    explanation.innerText = "Professor: Multiplicação armada no grid!";
+                } 
+                else if (exp.includes('/')) {
+                    let parts = cleanExp.split('/');
+                    if (parts[0].length > 2 || parts[1].length > 2) {
+                        desenharDivisao(Number(parts[0]), Number(parts[1]));
+                        explanation.innerText = "Professor: Divisão com chave armada!";
+                    } else {
+                        desenharFracao(exp);
+                    }
+                } 
+                else {
+                    escreverNoGrid(`${exp} =`, 2, 4);
+                    escreverNoGrid(resultadoFormatado.toString(), 2, 6, "#27ae60", "30px");
+                    explanation.innerText = "Professor: Conta simples finalizada!";
                 }
 
-                display.innerText = result;
-            } catch {
+                display.innerText = resultadoFormatado;
+            } catch (e) {
                 display.innerText = "Erro";
             }
         }
 
-        // --- FUNÇÕES DE DESENHO DO PROFESSOR ---
-
-        function drawProfessorText(txt, x, y, size = "35px", color = "#333") {
-            ctx.font = `bold ${size} 'Comic Sans MS', cursive`;
-            ctx.fillStyle = color;
-            ctx.fillText(txt, x, y);
-        }
-
-        function drawStepAddition(n1, n2, res) {
-            let x = 150, y = 120;
-            drawProfessorText(n1.toString().padStart(5, ' '), x, y);
-            drawProfessorText("+ " + n2.toString().padStart(5, ' '), x - 45, y + 50);
-            
-            ctx.lineWidth = 3;
-            ctx.beginPath(); ctx.moveTo(x - 50, y + 65); ctx.lineTo(x + 150, y + 65); ctx.stroke();
-
-            // Vai um visual
-            if ((n1 % 10) + (n2 % 10) >= 10) {
-                drawProfessorText("1", x + 60, y - 40, "20px", "red");
-                explanation.innerText = "Professor: Somamos as unidades e 'subiu 1' para a dezena porque passou de 9!";
-            } else {
-                explanation.innerText = "Professor: Somamos as colunas alinhadas: unidade com unidade, dezena com dezena.";
-            }
-
-            drawProfessorText(res.toString(), x + 10, y + 110, "45px", "#27ae60");
-        }
-
-        function drawStepSubtraction(n1, n2, res) {
-            let x = 150, y = 120;
-            drawProfessorText(n1.toString(), x, y);
-            drawProfessorText("- " + n2.toString(), x - 45, y + 50);
-            ctx.beginPath(); ctx.moveTo(x - 50, y + 65); ctx.lineTo(x + 150, y + 65); ctx.stroke();
-            drawProfessorText(res.toString(), x, y + 110, "45px", "#d50000");
-            explanation.innerText = "Professor: Na subtração, tiramos o valor de baixo do de cima. Se faltar, pedimos emprestado ao vizinho!";
-        }
-
-        function drawStepMultiplication(n1, n2, res) {
-            let x = 150, y = 100;
-            drawProfessorText(n1.toString(), x, y);
-            drawProfessorText("× " + n2.toString(), x - 45, y + 45);
-            ctx.fillRect(x - 50, y + 55, 150, 3);
-
-            if (n2 > 9) {
-                let p1 = n1 * (n2 % 10);
-                let p2 = n1 * (Math.floor(n2 / 10));
-                drawProfessorText(p1.toString(), x, y + 95, "25px", "#666");
-                drawProfessorText(p2.toString() + "0", x - 15, y + 130, "25px", "#666");
-                ctx.fillRect(x - 50, y + 140, 150, 1);
-                drawProfessorText(res.toString(), x, y + 190, "45px", "#2b6cb0");
-                explanation.innerText = "Professor: Multiplicamos a unidade primeiro, depois a dezena e somamos tudo no final.";
-            } else {
-                drawProfessorText(res.toString(), x, y + 100, "45px", "#2b6cb0");
-                explanation.innerText = "Professor: Multiplicamos cada número de cima pelo de baixo.";
-            }
-        }
-
-        function drawSciNote(label, res) {
-            drawProfessorText("Cálculo Realizado:", 50, 80, '18px', '#888');
-            drawProfessorText(label + " =", 50, 140, '28px');
-            drawProfessorText(res.toString(), 70, 210, '35px', '#27ae60');
-            explanation.innerText = "Professor: Esse é um cálculo direto. O resultado está ali no caderno!";
-        }
-
-        // Atalhos de teclado
         document.addEventListener("keydown", (e) => {
             if (!isNaN(e.key) || "+-*/().".includes(e.key)) append(e.key);
-            else if (e.key === "Enter") { e.preventDefault(); calculate(); }
-            else if (e.key === "Backspace") backspace();
+            if (e.key === "Enter") calculate();
+            if (e.key === "Backspace") backspace();
         });
     </script>
 </body>
