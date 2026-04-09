@@ -177,3 +177,26 @@ document.addEventListener("keydown", (e) => {
     if (e.key === "Enter") calculate();
     if (e.key === "Backspace") display.innerText = display.innerText.slice(0, -1) || "0";
 });
+
+// Simulação de lógica pedagógica (Onde a IA atuaria)
+function gerarExplicacaoIA(n1, n2, operador, resultado) {
+    const frasesBoas = [
+        "Note como os números se alinham perfeitamente no grid!",
+        "Matemática é como arte, cada quadrado conta uma história.",
+        "Excelente escolha de números! Vamos analisar o passo a passo.",
+        "Viu como a organização facilita o cálculo?"
+    ];
+    
+    let explicacaoBase = frasesBoas[Math.floor(Math.random() * frasesBoas.length)];
+
+    if (operador === '*') {
+        return `Professor: Para multiplicar ${n1} por ${n2}, distribuímos os valores. ${explicacaoBase}`;
+    } else if (operador === '/') {
+        if (n1 % n2 === 0) {
+            return `Professor: Esta é uma divisão exata! O resto é zero. ${explicacaoBase}`;
+        } else {
+            return `Professor: Como o resto não é zero, temos uma dízima ou valor decimal. ${explicacaoBase}`;
+        }
+    }
+    return `Professor: O resultado de ${n1} ${operador} ${n2} é ${resultado}. ${explicacaoBase}`;
+}

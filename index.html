@@ -110,6 +110,8 @@
 
         .equal { background: linear-gradient(45deg, #00ff88, #00c853); }
         .clear { background: linear-gradient(45deg, #ff1744, #d50000); }
+        /* Estilo para botões científicos */
+        .sci { background: rgba(0, 150, 255, 0.2); font-size: 12px; }
 
         /* --- CADERNO --- */
         .notebook {
@@ -170,6 +172,12 @@
             <div class="display" id="display">0</div>
 
             <div class="buttons">
+                <button onclick="appendFunc('Math.sin')" class="sci">sin</button>
+                <button onclick="appendFunc('Math.cos')" class="sci">cos</button>
+                <button onclick="appendFunc('Math.tan')" class="sci">tan</button>
+                <button onclick="appendFunc('Math.log10')" class="sci">log</button>
+                <button onclick="append('Math.PI')" class="sci">π</button>
+
                 <button onclick="clearDisplay()" class="clear">C</button>
                 <button onclick="backspace()">←</button>
                 <button onclick="append('(')">(</button>
@@ -194,7 +202,8 @@
                 <button onclick="append('+')">+</button>
                 <button onclick="calculate()" class="equal">=</button>
 
-                <button onclick="append('0')" style="grid-column: span 5;">0</button>
+                <button onclick="append('0')" style="grid-column: span 4;">0</button>
+                <button onclick="append('.')">.</button>
             </div>
         </div>
     </section>
@@ -241,10 +250,33 @@
             }
         }
 
+        // Função para armar Soma e Subtração
+        function desenharOperacaoSimples(n1, n2, res, operador) {
+            let s1 = n1.toString();
+            let s2 = n2.toString();
+            let sRes = res.toString();
+            let tam = Math.max(s1.length, s2.length, sRes.length) + 1;
+            let c = 5, l = 3;
+
+            escreverNoGrid(s1.padStart(tam, ' '), c, l);
+            escreverNoGrid(s2.padStart(tam, ' '), c, l + 1);
+            escreverNoGrid(operador, c, l + 1);
+
+            ctx.beginPath();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = "#000";
+            ctx.moveTo(c * GRID, (l + 2) * GRID);
+            ctx.lineTo((c + tam + 1) * GRID, (l + 2) * GRID);
+            ctx.stroke();
+
+            escreverNoGrid(sRes.padStart(tam, ' '), c, l + 2, "#27ae60", "22px");
+        }
+
         function desenharMultiplicacao(n1, n2, res) {
             let s1 = n1.toString();
             let s2 = n2.toString();
-            let tam = Math.max(s1.length, s2.length) + 1;
+            let sRes = res.toString();
+            let tam = Math.max(s1.length, s2.length, sRes.length) + 1;
             let c = 5, l = 3;
 
             escreverNoGrid(s1.padStart(tam, ' '), c, l);
@@ -258,7 +290,7 @@
             ctx.lineTo((c + tam + 1) * GRID, (l + 2) * GRID);
             ctx.stroke();
 
-            if (n2 > 9) {
+            if (Number(n2) > 9 && Number.isInteger(Number(n1)) && Number.isInteger(Number(n2))) {
                 let p1 = (n1 * (n2 % 10)).toString();
                 let p2 = (n1 * Math.floor(n2 / 10)).toString();
                 
@@ -271,15 +303,14 @@
                 ctx.lineTo((c + tam + 1) * GRID, (l + 4) * GRID);
                 ctx.stroke();
 
-                escreverNoGrid(res.toString().padStart(tam, ' '), c, l + 4, "#27ae60", "22px");
+                escreverNoGrid(sRes.padStart(tam, ' '), c, l + 4, "#27ae60", "22px");
             } else {
-                escreverNoGrid(res.toString().padStart(tam, ' '), c, l + 2, "#27ae60", "22px");
+                escreverNoGrid(sRes.padStart(tam, ' '), c, l + 2, "#27ae60", "22px");
             }
         }
 
-        function desenharDivisao(n1, n2) {
-            let q = Math.floor(n1 / n2).toString();
-            let r = (n1 % n2).toString();
+        function desenharDivisao(n1, n2, res) {
+            let q = res.toString();
             let s1 = n1.toString();
             let c = 4, l = 4;
 
@@ -291,21 +322,15 @@
             let chaveX = (c + s1.length) * GRID + 5;
             ctx.moveTo(chaveX, (l - 0.5) * GRID);
             ctx.lineTo(chaveX, (l + 1) * GRID); 
-            ctx.lineTo(chaveX + (4 * GRID), (l + 1) * GRID); 
+            ctx.lineTo(chaveX + (6 * GRID), (l + 1) * GRID); 
             ctx.stroke();
 
             escreverNoGrid(n2.toString(), c + s1.length + 1, l);
             escreverNoGrid(q, c + s1.length + 1, l + 1, "#27ae60");
-
-            let sub = (Math.floor(n1 / n2) * n2).toString();
-            escreverNoGrid("-" + sub, c - 1, l + 1, "#e53e3e");
             
-            ctx.beginPath();
-            ctx.moveTo((c - 1) * GRID, (l + 2) * GRID);
-            ctx.lineTo(chaveX, (l + 2) * GRID);
-            ctx.stroke();
-
-            escreverNoGrid(r, c + s1.length - r.length, l + 2, "#27ae60");
+            // Desenha o resto aproximado ou zero para didática
+            let r = (Number(n1) % Number(n2)).toFixed(2);
+            escreverNoGrid(parseFloat(r).toString(), c + s1.length - 1, l + 2, "#e53e3e", "14px");
         }
 
         function desenharFracao(exp) {
@@ -315,7 +340,7 @@
             ctx.fillStyle = "#000";
             ctx.fillRect(c * GRID + 5, (l + 1) * GRID - 2, GRID * num.length + 10, 2);
             escreverNoGrid(den, c, l + 1);
-            explanation.innerText = "Professor: Representei como uma fração!";
+            explanation.innerText = "Professor: Note que uma divisão também é uma fração!";
         }
 
         function append(val) {
@@ -323,11 +348,16 @@
             display.innerText += val;
         }
 
+        function appendFunc(func) {
+            if (display.innerText === "0") display.innerText = "";
+            display.innerText += func + "(";
+        }
+
         function clearDisplay() {
             display.innerText = "0";
             historyDiv.innerHTML = "";
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            explanation.innerText = "Professor: Caderno limpo!";
+            explanation.innerText = "Professor: Caderno limpo! Vamos começar de novo?";
         }
 
         function backspace() {
@@ -337,36 +367,55 @@
         function calculate() {
             try {
                 let exp = display.innerText;
-                let cleanExp = exp.replace('×', '*').replace('÷', '/');
+                let cleanExp = exp.replace(/×/g, '*').replace(/÷/g, '/');
                 let res = eval(cleanExp);
-                let resultadoFormatado = Number.isInteger(res) ? res : res.toFixed(2);
+                
+                // Formatação: permite qualquer resultado (inteiro ou decimal com 4 casas)
+                let resFormatado = Number.isInteger(res) ? res : res.toFixed(4);
+                resFormatado = parseFloat(resFormatado); // Remove zeros desnecessários no final
 
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                historyDiv.innerHTML += `<div>${exp} = ${resultadoFormatado}</div>`;
+                historyDiv.innerHTML += `<div>${exp} = ${resFormatado}</div>`;
 
-                if (exp.includes('*')) {
+                // Logica do Professor / Desenho no Caderno
+                if (exp.includes('*') && !exp.includes('Math')) {
                     let parts = cleanExp.split('*');
-                    desenharMultiplicacao(Number(parts[0]), Number(parts[1]), resultadoFormatado);
-                    explanation.innerText = "Professor: Multiplicação armada no grid!";
+                    desenharMultiplicacao(parts[0], parts[1], resFormatado);
+                    explanation.innerText = `Professor: Para multiplicar ${parts[0]} por ${parts[1]}, alinhei os números e calculei o produto. Veja o resultado decimal no grid!`;
                 } 
-                else if (exp.includes('/')) {
+                else if (exp.includes('/') && !exp.includes('Math')) {
                     let parts = cleanExp.split('/');
-                    if (parts[0].length > 2 || parts[1].length > 2) {
-                        desenharDivisao(Number(parts[0]), Number(parts[1]));
-                        explanation.innerText = "Professor: Divisão com chave armada!";
+                    if (parts[0].length > 2 || parts[1].length > 1) {
+                        desenharDivisao(parts[0], parts[1], resFormatado);
+                        explanation.innerText = `Professor: Montei a chave da divisão. Dividir ${parts[0]} por ${parts[1]} nos dá esse quociente exato ou decimal.`;
                     } else {
                         desenharFracao(exp);
                     }
-                } 
+                }
+                else if (exp.includes('+') && !exp.includes('Math')) {
+                    let parts = cleanExp.split('+');
+                    desenharOperacaoSimples(parts[0], parts[1], resFormatado, "+");
+                    explanation.innerText = `Professor: Armei a soma verticalmente. Somando as unidades e decimais, chegamos a ${resFormatado}.`;
+                }
+                else if (exp.includes('-') && !exp.includes('Math')) {
+                    let parts = cleanExp.split('-');
+                    desenharOperacaoSimples(parts[0], parts[1], resFormatado, "-");
+                    explanation.innerText = `Professor: Coloquei o maior sobre o menor para subtrair. A diferença encontrada foi ${resFormatado}.`;
+                }
                 else {
-                    escreverNoGrid(`${exp} =`, 2, 4);
-                    escreverNoGrid(resultadoFormatado.toString(), 2, 6, "#27ae60", "30px");
-                    explanation.innerText = "Professor: Conta simples finalizada!";
+                    if(exp.includes('Math')) {
+                        explanation.innerText = "Professor: Essa é uma função avançada! Calculei o valor preciso e registrei aqui no seu caderno.";
+                    } else {
+                        explanation.innerText = "Professor: Pronto! Registrei o cálculo e o resultado final no papel.";
+                    }
+                    escreverNoGrid(`${exp} =`, 1, 3, "#333", "16px");
+                    escreverNoGrid(resFormatado.toString(), 2, 5, "#27ae60", "26px");
                 }
 
-                display.innerText = resultadoFormatado;
+                display.innerText = resFormatado;
             } catch (e) {
                 display.innerText = "Erro";
+                explanation.innerText = "Professor: Opa, algo na sua expressão está confuso. Pode conferir?";
             }
         }
 
