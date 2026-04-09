@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora Didática - Estilo Caderno</title>
+    <title>Calculadora Didática - Tempo Real</title>
     <style>
         /* --- ESTILOS GERAIS --- */
         * {
@@ -27,7 +27,6 @@
             100% { background-position: right; }
         }
 
-        /* --- DIVISÃO DA TELA --- */
         .calculator-section {
             flex: 1;
             display: flex;
@@ -49,7 +48,6 @@
             padding: 20px;
         }
 
-        /* --- CALCULADORA --- */
         .calculator {
             background: rgba(0, 0, 0, 0.85);
             padding: 25px;
@@ -57,7 +55,6 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             width: 100%;
             max-width: 400px;
-            backdrop-filter: blur(10px);
         }
 
         .display {
@@ -110,10 +107,8 @@
 
         .equal { background: linear-gradient(45deg, #00ff88, #00c853); }
         .clear { background: linear-gradient(45deg, #ff1744, #d50000); }
-        /* Estilo para botões científicos */
         .sci { background: rgba(0, 150, 255, 0.2); font-size: 12px; }
 
-        /* --- CADERNO --- */
         .notebook {
             width: 100%;
             height: 70%;
@@ -132,7 +127,7 @@
             background-image:
                 linear-gradient(#e5e5e5 1px, transparent 1px),
                 linear-gradient(90deg, #e5e5e5 1px, transparent 1px);
-            background-size: 25px 25px; /* Tamanho do Grid */
+            background-size: 25px 25px;
             position: absolute;
             top: 0; left: 0;
             z-index: 1;
@@ -250,7 +245,17 @@
             }
         }
 
-        // Função para armar Soma e Subtração
+        // --- NOVA FUNÇÃO: Atualiza o caderno conforme digita ---
+        function atualizarRascunho() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            let exp = display.innerText;
+            if (exp !== "0" && exp !== "") {
+                escreverNoGrid("Montando a conta:", 1, 1, "#7f8c8d", "14px");
+                escreverNoGrid(exp, 2, 3, "#34495e", "22px");
+                explanation.innerText = "Professor: Estou anotando seu raciocínio aqui no papel...";
+            }
+        }
+
         function desenharOperacaoSimples(n1, n2, res, operador) {
             let s1 = n1.toString();
             let s2 = n2.toString();
@@ -328,7 +333,6 @@
             escreverNoGrid(n2.toString(), c + s1.length + 1, l);
             escreverNoGrid(q, c + s1.length + 1, l + 1, "#27ae60");
             
-            // Desenha o resto aproximado ou zero para didática
             let r = (Number(n1) % Number(n2)).toFixed(2);
             escreverNoGrid(parseFloat(r).toString(), c + s1.length - 1, l + 2, "#e53e3e", "14px");
         }
@@ -338,19 +342,20 @@
             let c = 8, l = 6;
             escreverNoGrid(num, c, l);
             ctx.fillStyle = "#000";
-            ctx.fillRect(c * GRID + 5, (l + 1) * GRID - 2, GRID * num.length + 10, 2);
-            escreverNoGrid(den, c, l + 1);
-            explanation.innerText = "Professor: Note que uma divisão também é uma fração!";
+            ctx.fillRect(c * GRID + 5, (l + 1) * GRID - 2, GRID * (num ? num.length : 1) + 10, 2);
+            if(den) escreverNoGrid(den, c, l + 1);
         }
 
         function append(val) {
             if (display.innerText === "0") display.innerText = "";
             display.innerText += val;
+            atualizarRascunho();
         }
 
         function appendFunc(func) {
             if (display.innerText === "0") display.innerText = "";
             display.innerText += func + "(";
+            atualizarRascunho();
         }
 
         function clearDisplay() {
@@ -362,6 +367,7 @@
 
         function backspace() {
             display.innerText = display.innerText.slice(0, -1) || "0";
+            atualizarRascunho();
         }
 
         function calculate() {
@@ -370,46 +376,41 @@
                 let cleanExp = exp.replace(/×/g, '*').replace(/÷/g, '/');
                 let res = eval(cleanExp);
                 
-                // Formatação: permite qualquer resultado (inteiro ou decimal com 4 casas)
                 let resFormatado = Number.isInteger(res) ? res : res.toFixed(4);
-                resFormatado = parseFloat(resFormatado); // Remove zeros desnecessários no final
+                resFormatado = parseFloat(resFormatado);
 
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 historyDiv.innerHTML += `<div>${exp} = ${resFormatado}</div>`;
 
-                // Logica do Professor / Desenho no Caderno
                 if (exp.includes('*') && !exp.includes('Math')) {
                     let parts = cleanExp.split('*');
                     desenharMultiplicacao(parts[0], parts[1], resFormatado);
-                    explanation.innerText = `Professor: Para multiplicar ${parts[0]} por ${parts[1]}, alinhei os números e calculei o produto. Veja o resultado decimal no grid!`;
+                    explanation.innerText = `Professor: Armei a conta de multiplicar para ${parts[0]} e ${parts[1]}. Veja o produto final.`;
                 } 
                 else if (exp.includes('/') && !exp.includes('Math')) {
                     let parts = cleanExp.split('/');
                     if (parts[0].length > 2 || parts[1].length > 1) {
                         desenharDivisao(parts[0], parts[1], resFormatado);
-                        explanation.innerText = `Professor: Montei a chave da divisão. Dividir ${parts[0]} por ${parts[1]} nos dá esse quociente exato ou decimal.`;
+                        explanation.innerText = `Professor: Fiz a chave da divisão para você ver o quociente de ${parts[0]} por ${parts[1]}.`;
                     } else {
                         desenharFracao(exp);
+                        explanation.innerText = "Professor: Note que representei sua divisão como uma fração!";
                     }
                 }
                 else if (exp.includes('+') && !exp.includes('Math')) {
                     let parts = cleanExp.split('+');
                     desenharOperacaoSimples(parts[0], parts[1], resFormatado, "+");
-                    explanation.innerText = `Professor: Armei a soma verticalmente. Somando as unidades e decimais, chegamos a ${resFormatado}.`;
+                    explanation.innerText = `Professor: Alinhei as ordens e realizei a soma. Resultado: ${resFormatado}.`;
                 }
                 else if (exp.includes('-') && !exp.includes('Math')) {
                     let parts = cleanExp.split('-');
                     desenharOperacaoSimples(parts[0], parts[1], resFormatado, "-");
-                    explanation.innerText = `Professor: Coloquei o maior sobre o menor para subtrair. A diferença encontrada foi ${resFormatado}.`;
+                    explanation.innerText = `Professor: Subtraí o minuendo do subtraendo para achar a diferença: ${resFormatado}.`;
                 }
                 else {
-                    if(exp.includes('Math')) {
-                        explanation.innerText = "Professor: Essa é uma função avançada! Calculei o valor preciso e registrei aqui no seu caderno.";
-                    } else {
-                        explanation.innerText = "Professor: Pronto! Registrei o cálculo e o resultado final no papel.";
-                    }
                     escreverNoGrid(`${exp} =`, 1, 3, "#333", "16px");
                     escreverNoGrid(resFormatado.toString(), 2, 5, "#27ae60", "26px");
+                    explanation.innerText = "Professor: Cálculo complexo resolvido e registrado no seu caderno!";
                 }
 
                 display.innerText = resFormatado;
